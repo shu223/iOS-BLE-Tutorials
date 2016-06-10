@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>1C54BE29-FB70-415A-8D22-53DA1335F280</string>
+	<key>IDESourceControlProjectName</key>
+	<string>BLEConnectExample</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>996D8ED54A06D2612FCDCD9182B0F0B291CCBC66</key>
+		<string>github.com:shu223/BLEBook.git</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>Sample/Part2/4-2_Connect/BLEConnectExample_swift/BLEConnectExample.xcodeproj</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>996D8ED54A06D2612FCDCD9182B0F0B291CCBC66</key>
+		<string>../../../../../..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>github.com:shu223/BLEBook.git</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>111</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>996D8ED54A06D2612FCDCD9182B0F0B291CCBC66</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>996D8ED54A06D2612FCDCD9182B0F0B291CCBC66</string>
+			<key>IDESourceControlWCCName</key>
+			<string>BLEBook</string>
+		</dict>
+	</array>
+</dict>
+</plist>
