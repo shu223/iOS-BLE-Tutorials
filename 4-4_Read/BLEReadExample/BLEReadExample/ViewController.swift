@@ -88,7 +88,6 @@ extension ViewController: CBCentralManagerDelegate {
 extension ViewController: CBPeripheralDelegate {
     // サービス発見時に呼ばれる
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
-        
         if let error = error {
             print("エラー: \(error)")
             return
@@ -116,10 +115,10 @@ extension ViewController: CBPeripheralDelegate {
             return
         }
         guard let characteristics = service.characteristics, characteristics.count > 0 else {
-            print("no characteristics")
+            print("no characteristics for service: \(service)")
             return
         }
-        print("\(characteristics.count) 個のキャラクタリスティックを発見！ \(characteristics)")
+        print("\(characteristics.count) 個のキャラクタリスティックを発見！ service: \(service), characteristic: \(characteristics) ")
         
         for characteristic in characteristics {
             // Read専用のキャラクタリスティックに限定して読み出す場合

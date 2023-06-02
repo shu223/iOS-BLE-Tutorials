@@ -83,6 +83,7 @@ extension ViewController: CBCentralManagerDelegate {
             
             // 接続開始
             centralManager.connect(peripheral)
+            centralManager.stopScan()
         }
     }
     

@@ -57,6 +57,7 @@ extension ViewController: CBCentralManagerDelegate {
             self.peripheral = peripheral
             
             centralManager.connect(peripheral)
+            centralManager.stopScan()
         }
     }
     
