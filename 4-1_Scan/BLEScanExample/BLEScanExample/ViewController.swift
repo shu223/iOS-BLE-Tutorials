@@ -9,8 +9,7 @@
 import UIKit
 import CoreBluetooth
 
-
-class ViewController: UIViewController, CBCentralManagerDelegate {
+class ViewController: UIViewController {
 
     var isScanning = false
     var centralManager: CBCentralManager!
@@ -21,56 +20,38 @@ class ViewController: UIViewController, CBCentralManagerDelegate {
         // セントラルマネージャ初期化
         centralManager = CBCentralManager(delegate: self, queue: nil)
     }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
-
-
-    // =========================================================================
-    // MARK: CBCentralManagerDelegate
     
-    // セントラルマネージャの状態が変化すると呼ばれる
-    func centralManagerDidUpdateState(central: CBCentralManager) {
+    // MARK: - Actions
 
-        print("state: \(central.state)")
-    }
-    
-    // 周辺にあるデバイスを発見すると呼ばれる
-    func centralManager(central: CBCentralManager,
-        didDiscoverPeripheral peripheral: CBPeripheral,
-        advertisementData: [String : AnyObject],
-        RSSI: NSNumber)
-    {
-        print("発見したBLEデバイス: \(peripheral)")
-    }
-    
-    
-    // =========================================================================
-    // MARK: Actions
-
-    @IBAction func scanBtnTapped(sender: UIButton) {
-        
+    @IBAction func scanButtonTapped(_ sender: UIButton) {
         if !isScanning {
-            
             isScanning = true
-            
-            centralManager.scanForPeripheralsWithServices(
-                nil,
-                options: nil
-            )
-            
-            sender.setTitle("STOP SCAN", forState: UIControlState.Normal)
-        }
-        else {
-            
+            sender.setTitle("STOP SCAN", for: .normal)
+
+            centralManager.scanForPeripherals(withServices: nil)
+        } else {
             centralManager.stopScan()
             
-            sender.setTitle("START SCAN", forState: UIControlState.Normal)
-            
+            sender.setTitle("START SCAN", for: .normal)
             isScanning = false
         }
+    }
+}
+
+extension ViewController: CBCentralManagerDelegate {
+        
+    // セントラルマネージャの状態が変化すると呼ばれる
+    func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        print("state: \(central.state)")
+    }
+
+    // 周辺にあるデバイスを発見すると呼ばれる
+    func centralManager(_ central: CBCentralManager,
+                        didDiscover peripheral: CBPeripheral,
+                        advertisementData: [String : Any],
+                        rssi RSSI: NSNumber)
+    {
+        print("発見したBLEデバイス: \(peripheral)")
     }
 }
 

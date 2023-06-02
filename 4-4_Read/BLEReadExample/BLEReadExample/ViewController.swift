@@ -9,8 +9,7 @@
 import UIKit
 import CoreBluetooth
 
-
-class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDelegate {
+class ViewController: UIViewController {
 
     var isScanning = false
     var centralManager: CBCentralManager!
@@ -23,45 +22,53 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         centralManager = CBCentralManager(delegate: self, queue: nil)
     }
 
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
+    // MARK: - Actions
+
+    @IBAction func scanButtonTapped(_ sender: UIButton) {
+        
+        if !isScanning {
+            isScanning = true
+            sender.setTitle("STOP SCAN", for: .normal)
+
+            centralManager.scanForPeripherals(withServices: nil)
+        } else {
+            centralManager.stopScan()
+            
+            sender.setTitle("START SCAN", for: .normal)
+            isScanning = false
+        }
     }
+}
 
-
-    // =========================================================================
-    // MARK: CBCentralManagerDelegate
+extension ViewController: CBCentralManagerDelegate {
     
     // セントラルマネージャの状態が変化すると呼ばれる
-    func centralManagerDidUpdateState(central: CBCentralManager) {
-
+    func centralManagerDidUpdateState(_ central: CBCentralManager) {
         print("state: \(central.state)")
     }
     
     // 周辺にあるデバイスを発見すると呼ばれる
-    func centralManager(central: CBCentralManager,
-        didDiscoverPeripheral peripheral: CBPeripheral,
-        advertisementData: [String : AnyObject],
-        RSSI: NSNumber)
+    func centralManager(_ central: CBCentralManager,
+                        didDiscover peripheral: CBPeripheral,
+                        advertisementData: [String : Any],
+                        rssi RSSI: NSNumber)
     {
         print("発見したBLEデバイス: \(peripheral)")
         
-        if let name = peripheral.name where name.hasPrefix("konashi") {
-            
+        if let name = peripheral.name, name.hasPrefix("konashi") {
             self.peripheral = peripheral
             
-            centralManager.connectPeripheral(peripheral, options: nil)
-            
+            centralManager.connect(peripheral)
             centralManager.stopScan()
         }
     }
     
     // ペリフェラルへの接続が成功すると呼ばれる
-    func centralManager(central: CBCentralManager,
-        didConnectPeripheral peripheral: CBPeripheral)
+    func centralManager(_ central: CBCentralManager,
+                        didConnect peripheral: CBPeripheral)
     {
         print("接続成功！")
-
+        
         // サービス探索結果を受け取るためにデリゲートをセット
         peripheral.delegate = self
         
@@ -70,109 +77,80 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     // ペリフェラルへの接続が失敗すると呼ばれる
-    func centralManager(central: CBCentralManager,
-        didFailToConnectPeripheral peripheral: CBPeripheral,
-        error: NSError?)
+    func centralManager(_ central: CBCentralManager,
+                        didFailToConnect peripheral: CBPeripheral,
+                        error: Error?)
     {
         print("接続失敗・・・")
     }
+}
 
-    
-    // =========================================================================
-    // MARK:CBPeripheralDelegate
-    
+extension ViewController: CBPeripheralDelegate {
     // サービス発見時に呼ばれる
-    func peripheral(peripheral: CBPeripheral, didDiscoverServices error: NSError?) {
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         
         if let error = error {
             print("エラー: \(error)")
             return
         }
         
-        guard let services = peripheral.services where services.count > 0 else {
+        guard let services = peripheral.services, services.count > 0 else {
             print("no services")
             return
         }
         print("\(services.count) 個のサービスを発見！ \(services)")
-
+        
         for service in services {
-            
             // キャラクタリスティック探索開始
-            peripheral.discoverCharacteristics(nil, forService: service)
+            peripheral.discoverCharacteristics(nil, for: service)
         }
     }
     
     // キャラクタリスティック発見時に呼ばれる
-    func peripheral(peripheral: CBPeripheral,
-        didDiscoverCharacteristicsForService service: CBService,
-        error: NSError?)
+    func peripheral(_ peripheral: CBPeripheral,
+                    didDiscoverCharacteristicsFor service: CBService,
+                    error: Error?)
     {
         if let error = error {
             print("エラー: \(error)")
             return
         }
-
-        guard let characteristics = service.characteristics where characteristics.count > 0 else {
+        guard let characteristics = service.characteristics, characteristics.count > 0 else {
             print("no characteristics")
             return
         }
         print("\(characteristics.count) 個のキャラクタリスティックを発見！ \(characteristics)")
         
         for characteristic in characteristics {
-            
             // Read専用のキャラクタリスティックに限定して読み出す場合
-            if characteristic.properties == CBCharacteristicProperties.Read {
-                
-                peripheral.readValueForCharacteristic(characteristic)
+            if characteristic.properties == .read {
+                peripheral.readValue(for: characteristic)
             }
         }
     }
     
     // データ読み出しが完了すると呼ばれる
-    func peripheral(peripheral: CBPeripheral,
-        didUpdateValueForCharacteristic characteristic: CBCharacteristic,
-        error: NSError?)
+    func peripheral(_ peripheral: CBPeripheral,
+                    didUpdateValueFor characteristic: CBCharacteristic,
+                    error: Error?)
     {
         if let error = error {
-            print("読み出し失敗...error: \(error), characteristic uuid: \(characteristic.UUID)")
+            print("読み出し失敗...error: \(error), characteristic uuid: \(characteristic.uuid)")
             return
         }
+        print("読み出し成功！service uuid: \(String(describing: characteristic.service?.uuid)), characteristic uuid: \(characteristic.uuid)")
         
-        print("読み出し成功！service uuid: \(characteristic.service.UUID), characteristic uuid: \(characteristic.UUID), value: \(characteristic.value)")
+        // キャラクタリスティックのvalueを取得
+        guard let data = characteristic.value else {
+            print("no value")
+            return }
+        print("value: \(String(describing: characteristic.value))")
         
         // バッテリーレベルのキャラクタリスティックかどうかを判定
-        if characteristic.UUID.isEqual(CBUUID(string: "2A19")) {
-            
-            var byte: CUnsignedChar = 0
-            
+        if characteristic.uuid.isEqual(CBUUID(string: "2A19")) {
             // 1バイト取り出す
-            characteristic.value?.getBytes(&byte, length: 1)
-            
+            let byte = data[0]
             print("Battery Level: \(byte)")
-        }
-    }
-
-    
-    // =========================================================================
-    // MARK: Actions
-
-    @IBAction func scanBtnTapped(sender: UIButton) {
-        
-        if !isScanning {
-            
-            isScanning = true
-            
-            centralManager.scanForPeripheralsWithServices(nil, options: nil)
-            
-            sender.setTitle("STOP SCAN", forState: UIControlState.Normal)
-        }
-        else {
-            
-            centralManager.stopScan()
-            
-            sender.setTitle("START SCAN", forState: UIControlState.Normal)
-            
-            isScanning = false
         }
     }
 }

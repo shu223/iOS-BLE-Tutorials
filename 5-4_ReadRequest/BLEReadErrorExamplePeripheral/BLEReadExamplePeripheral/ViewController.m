@@ -102,7 +102,7 @@
     NSLog(@"peripheralManagerDidUpdateState:%ld", (long)peripheral.state);
     
     switch (peripheral.state) {
-        case CBPeripheralManagerStatePoweredOn:
+        case CBManagerStatePoweredOn:
 
             // サービス登録
             [self publishService];

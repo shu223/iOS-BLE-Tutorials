@@ -9,8 +9,7 @@
 import UIKit
 import CoreBluetooth
 
-
-class ViewController: UIViewController, CBCentralManagerDelegate {
+class ViewController: UIViewController {
 
     var isScanning = false
     var centralManager: CBCentralManager!
@@ -23,68 +22,53 @@ class ViewController: UIViewController, CBCentralManagerDelegate {
         // セントラルマネージャ初期化
         centralManager = CBCentralManager(delegate: self, queue: nil)
     }
+    
+    // MARK: - Actions
 
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
+    @IBAction func scanButtonTapped(_ sender: UIButton) {
+        if !isScanning {
+            isScanning = true
+            sender.setTitle("STOP SCAN", for: .normal)
+
+            centralManager.scanForPeripherals(withServices: nil)
+        } else {
+            centralManager.stopScan()
+            
+            sender.setTitle("START SCAN", for: .normal)
+            isScanning = false
+        }
     }
+}
 
-
-    // =========================================================================
-    // MARK: CBCentralManagerDelegate
+extension ViewController: CBCentralManagerDelegate {
     
     // セントラルマネージャの状態が変化すると呼ばれる
-    func centralManagerDidUpdateState(central: CBCentralManager) {
-
+    func centralManagerDidUpdateState(_ central: CBCentralManager) {
         print("state: \(central.state)")
     }
     
     // 周辺にあるデバイスを発見すると呼ばれる
-    func centralManager(central: CBCentralManager,
-        didDiscoverPeripheral peripheral: CBPeripheral,
-        advertisementData: [String : AnyObject],
-        RSSI: NSNumber)
+    func centralManager(_ central: CBCentralManager,
+                        didDiscover peripheral: CBPeripheral,
+                        advertisementData: [String : Any],
+                        rssi RSSI: NSNumber)
     {
         print("発見したBLEデバイス: \(peripheral)")
         
         self.peripheral = peripheral
         peripherals.append(peripheral)
-        
-        centralManager.connectPeripheral(peripheral, options: nil)
+
+        centralManager.connect(peripheral)
     }
-    
+
     // ペリフェラルへの接続が成功すると呼ばれる
-    func centralManager(central: CBCentralManager, didConnectPeripheral peripheral: CBPeripheral) {
+    func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         print("接続成功！")
     }
     
     // ペリフェラルへの接続が失敗すると呼ばれる
-    func centralManager(central: CBCentralManager, didFailToConnectPeripheral peripheral: CBPeripheral, error: NSError?) {
+    func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
         print("接続失敗・・・")
-    }
-
-    
-    // =========================================================================
-    // MARK: Actions
-
-    @IBAction func scanBtnTapped(sender: UIButton) {
-        
-        if !isScanning {
-            
-            isScanning = true
-            
-            centralManager.scanForPeripheralsWithServices(nil, options: nil)
-            
-            sender.setTitle("STOP SCAN", forState: UIControlState.Normal)
-        }
-        else {
-            
-            centralManager.stopScan()
-            
-            sender.setTitle("START SCAN", forState: UIControlState.Normal)
-            
-            isScanning = false
-        }
     }
 }
 

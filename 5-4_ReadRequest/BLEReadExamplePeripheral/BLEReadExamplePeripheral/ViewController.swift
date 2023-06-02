@@ -9,155 +9,129 @@
 import UIKit
 import CoreBluetooth
 
-
-class ViewController: UIViewController, CBPeripheralManagerDelegate {
+class ViewController: UIViewController {
 
     @IBOutlet var advertiseBtn: UIButton!
-    var peripheralManager: CBPeripheralManager!
-    var serviceUUID: CBUUID!
-    var characteristic: CBMutableCharacteristic!
-    
+    private var peripheralManager: CBPeripheralManager!
+    private var serviceUUID: CBUUID!
+    private var characteristic: CBMutableCharacteristic!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         // ペリフェラルマネージャ初期化
-        self.peripheralManager = CBPeripheralManager(delegate: self, queue: nil, options: nil)
-    }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
+        peripheralManager = CBPeripheralManager(delegate: self, queue: nil, options: nil)
     }
     
+    // MARK: - Private
     
-    // =========================================================================
-    // MARK: Private
-    
-    func publishservice () {
-        
+    private func publishservice () {
         // サービスを作成
-        self.serviceUUID = CBUUID(string: "0000")
+        serviceUUID = CBUUID(string: "0000")
         let service = CBMutableService(type: serviceUUID, primary: true)
 
         // キャラクタリスティックを作成
         let characteristicUUID = CBUUID(string: "0001")
-        self.characteristic = CBMutableCharacteristic(
+        characteristic = CBMutableCharacteristic(
             type: characteristicUUID,
-            properties: CBCharacteristicProperties.Read,
+            properties: .read,
             value: nil,
-            permissions: CBAttributePermissions.Readable)
+            permissions: .readable)
 
         // キャラクタリスティックをサービスにセット
-        service.characteristics = [self.characteristic]
+        service.characteristics = [characteristic]
 
         // サービスを Peripheral Manager にセット
-        self.peripheralManager.addService(service)
+        peripheralManager.add(service)
 
         // 値をセット
         let value = UInt8(arc4random() & 0xFF)
-        let data = NSData(bytes: [value], length: 1)
-        self.characteristic.value = data;
+        let data = Data([value])
+        characteristic.value = data
     }
     
-    func startAdvertise() {
-
+    private func startAdvertise() {
         // アドバタイズメントデータを作成する
-        let advertisementData = [
+        let advertisementData: [String : Any] = [
             CBAdvertisementDataLocalNameKey: "Test Device",
-            CBAdvertisementDataServiceUUIDsKey: [self.serviceUUID]
+            CBAdvertisementDataServiceUUIDsKey: [serviceUUID]
         ]
         
         // アドバタイズ開始
-        self.peripheralManager.startAdvertising(advertisementData)
+        peripheralManager.startAdvertising(advertisementData)
         
-        self.advertiseBtn.setTitle("STOP ADVERTISING", forState: UIControlState.Normal)
+        advertiseBtn.setTitle("STOP ADVERTISING", for: .normal)
     }
     
-    func stopAdvertise () {
-        
+    private func stopAdvertise () {
         // アドバタイズ停止
-        self.peripheralManager.stopAdvertising()
+        peripheralManager.stopAdvertising()
         
-        self.advertiseBtn.setTitle("START ADVERTISING", forState: UIControlState.Normal)
+        advertiseBtn.setTitle("START ADVERTISING", for: .normal)
     }
 
+    // MARK: - Action
+    
+    @IBAction func advertiseButtonTapped(_ sender: UIButton) {
+        if !peripheralManager.isAdvertising {
+            startAdvertise()
+        } else {
+            stopAdvertise()
+        }
+    }
+}
 
-    // =========================================================================
-    // MARK: CBPeripheralManagerDelegate
+extension ViewController: CBPeripheralManagerDelegate {
     
     // ペリフェラルマネージャの状態が変化すると呼ばれる
-    func peripheralManagerDidUpdateState(peripheral: CBPeripheralManager) {
-        
+    func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
         print("state: \(peripheral.state)")
-
-        switch peripheral.state {
-
-        case CBPeripheralManagerState.PoweredOn:
-            // サービス登録開始
-            self.publishservice()
-            break
         
+        switch peripheral.state {
+        case .poweredOn:
+            // サービス登録開始
+            publishservice()
         default:
             break
         }
     }
     
     // サービス追加処理が完了すると呼ばれる
-    func peripheralManager(peripheral: CBPeripheralManager, didAddService service: CBService, error: NSError?) {
-        
-        if (error != nil) {
+    func peripheralManager(_ peripheral: CBPeripheralManager,
+                           didAdd service: CBService,
+                           error: Error?)
+    {
+        if let error = error {
             print("サービス追加失敗！ error: \(error)")
             return
         }
-        
         print("サービス追加成功！")
-
-        // アドバタイズ開始
-        self.startAdvertise()
-    }
-
-    // アドバタイズ開始処理が完了すると呼ばれる
-    func peripheralManagerDidStartAdvertising(peripheral: CBPeripheralManager, error: NSError?) {
         
-        if (error != nil) {
+        // アドバタイズ開始
+        startAdvertise()
+    }
+    
+    // アドバタイズ開始処理が完了すると呼ばれる
+    func peripheralManagerDidStartAdvertising(_ peripheral: CBPeripheralManager, error: Error?) {
+        if let error = error {
             print("アドバタイズ開始失敗！ error: \(error)")
             return
         }
-
         print("アドバタイズ開始成功！")
     }
     
     // Readリクエスト受信時に呼ばれる
-    func peripheralManager(peripheral: CBPeripheralManager, didReceiveReadRequest request: CBATTRequest) {
-        
-        print("Readリクエスト受信！ requested service uuid:\(request.characteristic.service.UUID) characteristic uuid:\(request.characteristic.UUID) value:\(request.characteristic.value)")
+    func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveRead request: CBATTRequest) {
+        print("Readリクエスト受信！ requested service uuid:\(String(describing: request.characteristic.service?.uuid)) characteristic uuid:\(request.characteristic.uuid) value:\(String(describing: request.characteristic.value))")
         
         // プロパティで保持しているキャラクタリスティックへのReadリクエストかどうかを判定
-        if request.characteristic.UUID.isEqual(self.characteristic.UUID) {
+        if request.characteristic.uuid.isEqual(characteristic.uuid) {
             
             // CBMutableCharacteristicのvalueをCBATTRequestのvalueにセット
-            request.value = self.characteristic.value
+            request.value = characteristic.value
             
             // リクエストに応答
-            self.peripheralManager.respondToRequest(
-                request,
-                withResult: .Success)
-        }
-   }
-
-    
-    // =========================================================================
-    // MARK: Actions
-    
-    @IBAction func advertiseBtnTapped(sender: UIButton) {
-
-        if (!self.peripheralManager.isAdvertising) {
-            
-            self.startAdvertise()
-        }
-        else {
-            self.stopAdvertise()
+            peripheralManager.respond(to: request, withResult: .success)
         }
     }
 }

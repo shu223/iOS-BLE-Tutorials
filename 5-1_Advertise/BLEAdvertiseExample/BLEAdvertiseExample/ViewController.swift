@@ -9,12 +9,10 @@
 import UIKit
 import CoreBluetooth
 
-
-class ViewController: UIViewController, CBPeripheralManagerDelegate {
+class ViewController: UIViewController {
 
     @IBOutlet var advertiseBtn: UIButton!
-    var peripheralManager: CBPeripheralManager!
-    
+    private var peripheralManager: CBPeripheralManager!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -25,80 +23,59 @@ class ViewController: UIViewController, CBPeripheralManagerDelegate {
             queue: nil,
             options: nil)
     }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
     
+    // MARK: - Private
     
-    // =========================================================================
-    // MARK: Private
-    
-    func startAdvertise() {
-
+    private func startAdvertise() {
         // アドバタイズメントデータを作成する
         let advertisementData = [CBAdvertisementDataLocalNameKey: "Test Device"]
         
         // アドバタイズ開始
         peripheralManager.startAdvertising(advertisementData)
         
-        advertiseBtn.setTitle("STOP ADVERTISING", forState: UIControlState.Normal)
+        advertiseBtn.setTitle("STOP ADVERTISING", for: .normal)
     }
     
-    func stopAdvertise () {
-        
+    private func stopAdvertise () {
         // アドバタイズ停止
         peripheralManager.stopAdvertising()
         
-        advertiseBtn.setTitle("START ADVERTISING", forState: UIControlState.Normal)
+        advertiseBtn.setTitle("START ADVERTISING", for: .normal)
     }
+    
+    // MARK: - Action
+    
+    @IBAction func advertiseButtonTapped(_ sender: UIButton) {
+        if !peripheralManager.isAdvertising {
+            startAdvertise()
+        } else {
+            stopAdvertise()
+        }
+    }
+}
 
-
-    // =========================================================================
-    // MARK: CBPeripheralManagerDelegate
+extension ViewController: CBPeripheralManagerDelegate {
     
     // ペリフェラルマネージャの状態が変化すると呼ばれる
-    func peripheralManagerDidUpdateState(peripheral: CBPeripheralManager) {
-        
+    func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
         print("state: \(peripheral.state)")
-
+        
         switch peripheral.state {
-
-        case .PoweredOn:
+        case .poweredOn:
             // アドバタイズ開始
             startAdvertise()
-            break
-        
         default:
             break
         }
     }
     
     // アドバタイズ開始処理が完了すると呼ばれる
-    func peripheralManagerDidStartAdvertising(peripheral: CBPeripheralManager, error: NSError?) {
-        
+    func peripheralManagerDidStartAdvertising(_ peripheral: CBPeripheralManager, error: Error?) {
         if let error = error {
             print("アドバタイズ開始失敗！ error: \(error)")
             return
         }
-
         print("アドバタイズ開始成功！")
-    }
-    
-    
-    // =========================================================================
-    // MARK: Actions
-    
-    @IBAction func advertiseBtnTapped(sender: UIButton) {
-
-        if !peripheralManager.isAdvertising {
-            
-            startAdvertise()
-        }
-        else {
-            stopAdvertise()
-        }
     }
 }
 
