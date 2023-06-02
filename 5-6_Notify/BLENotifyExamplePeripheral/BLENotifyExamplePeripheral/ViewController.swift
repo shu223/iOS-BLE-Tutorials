@@ -75,7 +75,11 @@ class ViewController: UIViewController {
     }
     
     private func updateValueLabel () {
-        valueLabel.text = "Characteristic value: \(String(describing: characteristic.value))"
+        if let value = characteristic.value {
+            valueLabel.text = "Characteristic value: \(value.hexString)"
+        } else {
+            valueLabel.text = nil
+        }
     }
     
     // MARK: Actions
@@ -192,3 +196,8 @@ extension ViewController: CBPeripheralManagerDelegate {
     }
 }
 
+extension Data {
+    var hexString: String {
+        return map { String(format: "%02X", $0) }.joined()
+    }
+}
